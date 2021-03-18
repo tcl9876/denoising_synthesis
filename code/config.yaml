@@ -1,0 +1,91 @@
+#NOTE: null in this YAML file is converted to None in python.
+#null means None. If you need to use a None value for some argument, set it to null. 
+ 
+#note: target_shape is converted to a python list of length 3 with values [H, W, C]
+target_shape:  #The shape of the images you want to generate
+- 28 #H
+- 28 #W 
+- 3 #C
+
+continue_training: true #whether to continue training the model or to start from scratch
+
+fit_method: resize
+#folders
+data_dir: ../data/data_npy #the folder where your training data (numpy arrays of the images in your dataset) will be stored.
+model_dir: ../data/models #the folders where your models will be saved.
+results_dir: ../data/train_results #the folder where your training results will be stored.
+data_stg2_dir: ../data/data_stg2 #the folder where your stage 2 training data will be stored
+results_stg2_dir: ../data/train_results_stg2 #the folder where your stage 2 results will be stored
+
+#device related specifications.
+devices_to_use: null  #which devices to use in training/evaluation. By default, it will automatically choose.
+use_mixed_precision: false #whether to use mixed precision training. Recommend setting to False if using a GPU with compute capability < 7.0
+use_xla: false #whether to use accelerated Linear Algebra. 
+
+show_steps: 100 #how many steps to show in the generative process.
+show_mode: DDIM #the generative process to use when creating samples. Must be 'DDIM', 'DDPM'. 
+#the difference is 'DDIM' is deterministic and supports using fewer steps to produce samples, but 'DDPM' produces the highest quality samples 
+
+#architecture configuration.
+model_config:
+  c: 64 #the width of the model
+
+  #the length of chmuls specifies the number of spatial resolutions in the model.
+  #each spatial resolution i will have a channel size of c * chmuls[i].
+  chmuls: 
+  - 1
+  - 2
+  - 3
+  layers_per_resolution: 3 #the number of layers per spatial resolution
+  
+  #whether to use self-attention at each spatial resolution
+  #sa_list must have the same length as chmuls.
+  sa_list:
+  - false
+  - true
+  - false
+
+  drop_rate: 0.0 #dropout rate.
+  groups: 32 #the number of groups in GroupNormalization. The channel size must be divisible by the number of groups.
+
+#this defines the number of steps used during sampling, and the list of noise levels
+#The default settings are good, so if unsure about these arguments, leave them as the default
+#if you want to reduce the number of steps used, increase the values of beta (min/max or const)
+schedule_config:
+  n_steps : 1000 #the number of steps in the image generation process
+  betas_type: linear #the progression of the 'beta' values in the noise schedule.
+  min: 0.0001 #the smallest beta value in the schedule. Leave as null if using 'constant' betas_type
+  max: 0.02 #the largest beta value in the schedule. Leave as null if using 'constant' betas_type
+  const: null #keep at None if using 'linear' or 'quadratic'. Otherwise, this is your beta value for all timesteps.
+
+#training configuration for the iterative generative model.
+train_base_config:
+  max_iterations: 50001 #how many iterations you will train your model on.
+  batch_size: 64 #the batch size for your model.
+
+  #first argument in lr is the learning rate for Adam
+  #the second argument in lr is the number of warmup steps
+  lr:
+  - 0.0002
+  - 1000
+  beta_1: 0.9 #beta_1 of Adam
+  beta_2: 0.999 #beta_2 of Adam
+  ema_rate: 0.99 #momentum parameter for the EMA of the weights. NOTE: EMA IS UPDATED EVERY 25 STEPS, NOT EVERY STEP. 
+
+
+dataset_stg2_config:
+  show_steps: 50 #how many generation steps to use when creating the synthetic images
+  samples_to_write: 20480 #how many synthetic x-y pairs to use.
+  batch_size: 128 #batch size for creating the dataset. a good value is twice the batch size used during training.
+
+train_stg2_config:
+  max_iterations: 20001 #how many iterations you will train your model on.
+  batch_size: 64 #the batch size for your model.
+  
+  #learning rate, number of warmup steps.
+  lr:
+  - 0.0002
+  - 1000
+  beta_1: 0.9 #beta_1 of Adam. Large values (beta_1 > 0.9 often achieve good results.)
+  beta_2: 0.999 #beta_2 of Adam
+  ema_rate: 0.95 #momentum parameter for the EMA of the weights. NOTE: EMA IS UPDATED EVERY 25 STEPS, NOT EVERY STEP.
