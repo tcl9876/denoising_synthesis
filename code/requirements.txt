@@ -1,0 +1,7 @@
+h5py==2.10.0
+imageio==2.4.1
+matplotlib==3.2.2
+numpy==1.19.5
+pyyaml==3.13
+tensorflow==2.2.0
+tensorflow-addons==0.8.1
